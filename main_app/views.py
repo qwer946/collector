@@ -8,7 +8,7 @@ from django.views.generic.detail import DetailView
 # signup login
 from django.contrib.auth import login
 from django.contrib.auth.forms import UserCreationForm
-from .models import Cat, Toy, Photo
+from .models import Bird, Toy, Photo
 from .forms import FeedingForm
 import uuid
 import boto3
@@ -36,49 +36,49 @@ def about(request):
 
 
 @login_required
-def cats_index(request):
-    cats = Cat.objects.filter(user=request.user)
-    return render(request, 'cats/index.html', {'cats': cats})
+def birds_index(request):
+    birds = Bird.objects.filter(user=request.user)
+    return render(request, 'birds/index.html', {'birds': birds})
 
 
 @login_required
-def cats_detail(request, cat_id):
-    cat = Cat.objects.get(id=cat_id)
+def birds_detail(request, bird_id):
+    bird = Bird.objects.get(id=bird_id)
     feeding_form = FeedingForm()
-    return render(request, 'cats/detail.html', {
-        # include the cat and feeding_form in the context
-        'cat': cat, 'feeding_form': feeding_form
+    return render(request, 'birds/detail.html', {
+        # include the bird and feeding_form in the context
+        'bird': bird, 'feeding_form': feeding_form
     })
 
 
 @login_required
-def add_feeding(request, cat_id):
+def add_feeding(request, bird_id):
     # create the ModelForm using the data in request.POST
     form = FeedingForm(request.POST)
     # validate the form
     if form.is_valid():
         # don't save the form to the db until it
-        # has the cat_id assigned
+        # has the bird_id assigned
         new_feeding = form.save(commit=False)
-        new_feeding.cat_id = cat_id
+        new_feeding.bird_id = bird_id
         new_feeding.save()
-    return redirect('detail', cat_id=cat_id)
+    return redirect('detail', bird_id=bird_id)
 
 
 @login_required
-def assoc_toy(request, cat_id, toy_id):
-    Cat.objects.get(id=cat_id).toys.add(toy_id)
-    return redirect('detail', cat_id=cat_id)
+def assoc_toy(request, bird_id, toy_id):
+    Bird.objects.get(id=bird_id).toys.add(toy_id)
+    return redirect('detail', bird_id=bird_id)
 
 
 @login_required
-def assoc_toy_delete(request, cat_id, toy_id):
-    Cat.objects.get(id=cat_id).toys.remove(toy_id)
-    return redirect('detail', cat_id=cat_id)
+def assoc_toy_delete(request, bird_id, toy_id):
+    Bird.objects.get(id=bird_id).toys.remove(toy_id)
+    return redirect('detail', bird_id=bird_id)
 
 
 @login_required
-def add_photo(request, cat_id):
+def add_photo(request, bird_id):
     # attempt to collect the photo file data
     photo_file = request.FILES.get('photo-file', None)
     # use conditional logic to determine if file is present
@@ -88,22 +88,22 @@ def add_photo(request, cat_id):
         # create a unique id for each photo file
         key = uuid.uuid4().hex[:6] + \
             photo_file.name[photo_file.name.rfind('.'):]
-        # funny_cat.png = jdbw7f.png
+        # funny_bird.png = jdbw7f.png
         # upload the photo file to aws s3
         try:
             # if successful
             s3.upload_fileobj(photo_file, BUCKET, key)
             # take the exchanged url and save it to the database
             url = f"{S3_BASE_URL}{BUCKET}/{key}"
-            # 1) create photo instance with photo model and provide cat_id as foreign key val
-            photo = Photo(url=url, cat_id=cat_id)
+            # 1) create photo instance with photo model and provide bird_id as foreign key val
+            photo = Photo(url=url, bird_id=bird_id)
             # 2) save the photo instance to the database
             photo.save()
         except Exception as error:
             print("Error uploading photo: ", error)
-            return redirect('detail', cat_id=cat_id)
+            return redirect('detail', bird_id=bird_id)
         # print an error message
-    return redirect('detail', cat_id=cat_id)
+    return redirect('detail', bird_id=bird_id)
     # redirect the user to the origin
 
 
@@ -127,29 +127,29 @@ def signup(request):
     return render(request, 'registration/signup.html', context)
 
 
-class CatCreate(CreateView):
-    model = Cat
+class BirdCreate(CreateView):
+    model = Bird
     fields = ['name', 'breed', 'description', 'age']
-    success_url = '/cats/'
+    success_url = '/birds/'
 
     # This inherited method is called when a
-    # valid cat form is being submitted
+    # valid bird form is being submitted
     def form_valid(self, form):
         # Assign the logged in user (self.request.user)
-        form.instance.user = self.request.user  # form.instance is the cat
+        form.instance.user = self.request.user  # form.instance is the bird
     # Let the CreateView do its job as usual
         return super().form_valid(form)
 
 
-class CatUpdate(LoginRequiredMixin, UpdateView):
-    model = Cat
-    # Let's disallow the renaming of a cat by excluding the name field!
+class BirdUpdate(LoginRequiredMixin, UpdateView):
+    model = Bird
+    # Let's disallow the renaming of a bird by excluding the name field!
     fields = ['breed', 'description', 'age']
 
 
-class CatDelete(LoginRequiredMixin, DeleteView):
-    model = Cat
-    success_url = '/cats/'
+class BirdDelete(LoginRequiredMixin, DeleteView):
+    model = Bird
+    success_url = '/birds/'
 
 
 class ToyList(LoginRequiredMixin, ListView):

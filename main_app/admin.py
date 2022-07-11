@@ -1,9 +1,9 @@
 from django.contrib import admin
 # import your models here
-from .models import Cat, Feeding, Toy, Photo
+from .models import Bird, Feeding, Toy, Photo
 
 # Register your models here
-admin.site.register(Cat)
+admin.site.register(Bird)
 
 admin.site.register(Feeding)
 
